@@ -1,80 +1,54 @@
 #!/usr/bin/python3
+# 101-stats.py
+"""Read from standard input and computes metrics.
+prints the following statistics:
+    - Total file size up to that point.
+    - Count of read status codes up to that point.
 """
-module contains
-class Metrics
-script, to handle class
-"""
-import sys
 
 
-class Metrics:
+def print_stats(size, status_codes):
+    """Print accumulated metrics.
     """
-    metrics class to handle holding and display of information
-    """
-    eCodes = ['200', '301', '400', '401', '403', '404', '405', '500']
+    print("File size: {}".format(size))
+    for key in sorted(status_codes):
+        print("{}: {}".format(key, status_codes[key]))
 
-    def __init__(self):
-        """
-        init for metrics class
-        sets all attributes to 0(zero) at start
-        """
-        self.total_size = 0
-        self.lineCount = 0
-        for code in self.eCodes:
-            setattr(self, self.code_to_attr(code), 0)
 
-    def __str__(self):
-        """
-        informal string for printing data
-        """
-        retStr = f"File size: {self.total_size}\n"
-        for code in self.eCodes:
-            value = getattr(self, self.code_to_attr(code))
-            if value == 0:
-                continue
-            retStr += f"{code}: {getattr(self, self.code_to_attr(code))}\n"
-        retStr = retStr[:-1]
-        return (retStr)
+if __name__ == "__main__":
+    import sys
 
-    def code_check(self, Code, size):
-        """
-        checks if attribute exists and updates fields if required
-        Name to be more specific with naming,
-        Method is incrementing not checking.
-        """
-        if Code in self.eCodes:
+    size = 0
+    status_codes = {}
+    valid_codes = ['200', '301', '400', '401', '403', '404', '405', '500']
+    count = 0
+
+    try:
+        for line in sys.stdin:
+            if count == 10:
+                print_stats(size, status_codes)
+                count = 1
+            else:
+                count += 1
+
+            line = line.split()
+
             try:
-                self.total_size += int(size)
-                value = getattr(self, self.code_to_attr(Code)) + 1
-                setattr(self, self.code_to_attr(Code), value)
-            except Exception:
-                return
-        else:
-            return
+                size += int(line[-1])
+            except (IndexError, ValueError):
+                pass
 
-    def code_to_attr(self, Code):
-        """
-        converts an error code into a string rep of the
-        corrisponding attribute
-        """
-        fullAttr = "e" + Code
-        return (fullAttr)
+            try:
+                if line[-2] in valid_codes:
+                    if status_codes.get(line[-2], -1) == -1:
+                        status_codes[line[-2]] = 1
+                    else:
+                        status_codes[line[-2]] += 1
+            except IndexError:
+                pass
 
+        print_stats(size, status_codes)
 
-info = Metrics()
-try:
-    currLine = sys.stdin.readline()
-    info.lineCount += 1
-    while currLine != "":
-        tokens = currLine.split()
-        if len(tokens) < 2:
-            currLine = sys.stdin.readline()
-            continue
-        info.code_check(tokens[-2], tokens[-1])
-        if (info.lineCount % 10) == 0:
-            print(info)
-        currLine = sys.stdin.readline()
-        info.lineCount += 1
-    print(info)
-except KeyboardInterrupt:
-    print(info)
+    except KeyboardInterrupt:
+        print_stats(size, status_codes)
+        raise
